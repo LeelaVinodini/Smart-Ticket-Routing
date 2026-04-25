@@ -193,3 +193,23 @@ with st.expander("ℹ️ Model Info"):
     - Supports Single & Bulk processing
     - Confidence-based prediction
     """)
+    # =========================
+# FOOTER
+# =========================
+st.markdown("""
+<style>
+.footer {
+    position: fixed;
+    bottom: 10px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: gray;
+    font-size: 14px;
+}
+</style>
+
+<div class="footer">
+    Created by <b>Leela Vinodini</b> 💖
+</div>
+""", unsafe_allow_html=True)
