@@ -4,54 +4,73 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
-# ✅ MUST BE FIRST
-st.set_page_config(page_title="Smart Ticket Routing", page_icon="🚀", layout="wide")
+# ✅ FIRST COMMAND
+st.set_page_config(page_title="AI Ticket Routing", page_icon="🚀", layout="wide")
 
-# ==============================
-# STEP 1: IMPROVED TRAINING DATA
-# ==============================
+# =====================================
+# 🔥 BIGGER TRAINING DATA (KEY UPGRADE)
+# =====================================
 def get_data():
     data = {
         "text": [
-            # Technical
+            # Technical (more variations)
             "app crashes on startup", "screen flickering issue",
             "software not responding", "error while logging in",
             "system not loading", "app freezes frequently",
+            "bug in application", "server error occurred",
+            "app not opening", "system failure issue",
 
             # Account
             "cannot login to account", "password reset not working",
             "account locked", "unable to verify email",
             "forgot password issue", "cannot update profile",
+            "login failed error", "account suspended",
+            "otp not received", "cannot access account",
 
             # Billing
             "charged twice for subscription", "refund not received",
             "incorrect billing amount", "payment failed but money deducted",
             "overcharged on my card", "unexpected transaction detected",
+            "double payment issue", "refund pending",
+            "billing error on invoice", "extra charges applied",
 
             # Logistics
             "order not delivered", "where is my package",
             "delivery delayed", "tracking not working",
-            "shipment stuck in transit", "wrong delivery address"
+            "shipment stuck in transit", "wrong delivery address",
+            "package lost", "delivery not attempted",
+            "courier delay issue", "order arrived late"
         ],
         "label": [
-            "Technical","Technical","Technical","Technical","Technical","Technical",
-            "Account","Account","Account","Account","Account","Account",
-            "Billing","Billing","Billing","Billing","Billing","Billing",
-            "Logistics","Logistics","Logistics","Logistics","Logistics","Logistics"
+            "Technical","Technical","Technical","Technical","Technical",
+            "Technical","Technical","Technical","Technical","Technical",
+
+            "Account","Account","Account","Account","Account",
+            "Account","Account","Account","Account","Account",
+
+            "Billing","Billing","Billing","Billing","Billing",
+            "Billing","Billing","Billing","Billing","Billing",
+
+            "Logistics","Logistics","Logistics","Logistics","Logistics",
+            "Logistics","Logistics","Logistics","Logistics","Logistics"
         ]
     }
     return pd.DataFrame(data)
 
-# ==============================
-# STEP 2: TRAIN MODEL (IMPROVED)
-# ==============================
+# =====================================
+# 🔥 IMPROVED MODEL
+# =====================================
 @st.cache_resource
 def train_model():
     df = get_data()
 
     pipeline = Pipeline([
-        ('tfidf', TfidfVectorizer(ngram_range=(1,2), stop_words='english')),
-        ('clf', LogisticRegression(max_iter=200))
+        ('tfidf', TfidfVectorizer(
+            ngram_range=(1,2),
+            stop_words='english',
+            max_features=1000
+        )),
+        ('clf', LogisticRegression(max_iter=300))
     ])
 
     pipeline.fit(df['text'], df['label'])
@@ -59,16 +78,16 @@ def train_model():
 
 model_pipeline = train_model()
 
-# ==============================
-# STEP 3: SMART URGENCY LOGIC
-# ==============================
+# =====================================
+# 🔥 SMART URGENCY SYSTEM
+# =====================================
 def get_urgency(text, category):
     text = text.lower()
 
     high_keywords = [
-        "charged", "refund", "overcharged", "double charged",
+        "charged", "overcharged", "double", "refund",
         "payment failed", "money deducted",
-        "not received", "crash", "error", "not working", "locked"
+        "not received", "lost", "crash", "error", "locked"
     ]
 
     if any(word in text for word in high_keywords):
@@ -79,90 +98,80 @@ def get_urgency(text, category):
 
     return "Low"
 
-# ==============================
+# =====================================
 # UI
-# ==============================
-st.title("🚀 Smart Ticket Routing System")
-st.write("Supports **Single + Bulk Classification with Improved Accuracy**")
+# =====================================
+st.title("🚀 AI Smart Ticket Routing System")
+st.write("High Accuracy NLP-based Classification")
 
 tab1, tab2 = st.tabs(["🧍 Single Ticket", "📂 Bulk Upload"])
 
-# ==============================
+# =====================
 # SINGLE INPUT
-# ==============================
+# =====================
 with tab1:
-    ticket_input = st.text_area("Enter Support Ticket")
+    text = st.text_area("Enter Support Ticket")
 
-    if st.button("Classify Ticket"):
-        if ticket_input.strip() == "":
-            st.warning("⚠️ Please enter text")
+    if st.button("Classify"):
+        if text.strip() == "":
+            st.warning("Enter some text")
         else:
-            prediction = model_pipeline.predict([ticket_input])[0]
-            probs = model_pipeline.predict_proba([ticket_input])
-            confidence = max(probs[0])
+            pred = model_pipeline.predict([text])[0]
+            probs = model_pipeline.predict_proba([text])[0]
+            confidence = max(probs)
 
-            urgency = get_urgency(ticket_input, prediction)
+            urgency = get_urgency(text, pred)
 
             col1, col2, col3 = st.columns(3)
-            col1.metric("Category", prediction)
-            col2.metric("Confidence", f"{round(confidence*100,2)}%")
+            col1.metric("Category", pred)
+            col2.metric("Confidence", f"{confidence*100:.2f}%")
             col3.metric("Urgency", urgency)
 
-# ==============================
+# =====================
 # BULK INPUT
-# ==============================
+# =====================
 with tab2:
-    st.subheader("Upload CSV / Excel File")
+    file = st.file_uploader("Upload CSV/Excel", type=["csv", "xlsx"])
 
-    uploaded_file = st.file_uploader("Upload file", type=["csv", "xlsx"])
-
-    if uploaded_file is not None:
+    if file:
         try:
-            if uploaded_file.name.endswith(".csv"):
-                df = pd.read_csv(uploaded_file)
+            if file.name.endswith(".csv"):
+                df = pd.read_csv(file)
             else:
-                df = pd.read_excel(uploaded_file)
+                df = pd.read_excel(file)
 
-            st.success("✅ File uploaded")
             st.dataframe(df.head())
 
-            text_column = st.selectbox("Select column to classify", df.columns)
+            col = st.selectbox("Select column", df.columns)
 
-            if st.button("Process Bulk Data"):
-                texts = df[text_column].astype(str)
+            if st.button("Process"):
+                texts = df[col].astype(str)
 
                 df["Category"] = model_pipeline.predict(texts)
                 probs = model_pipeline.predict_proba(texts)
                 df["Confidence"] = probs.max(axis=1)
 
                 df["Urgency"] = df.apply(
-                    lambda x: get_urgency(x[text_column], x["Category"]),
+                    lambda x: get_urgency(x[col], x["Category"]),
                     axis=1
                 )
 
-                st.success("✅ Processing Complete")
+                st.success("Done ✅")
                 st.dataframe(df)
 
-                csv = df.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    "📥 Download Results",
-                    csv,
-                    "classified_results.csv",
-                    "text/csv"
-                )
+                csv = df.to_csv(index=False).encode()
+                st.download_button("Download Results", csv, "results.csv")
 
         except Exception as e:
-            st.error(f"❌ Error: {e}")
+            st.error(f"Error: {e}")
 
-# ==============================
-# MODEL INFO
-# ==============================
-with st.expander("⚙️ Model Details"):
-    st.table({
-        "Feature": ["Vectorization", "Model", "Accuracy Boost"],
-        "Details": [
-            "TF-IDF (Bi-grams)",
-            "Logistic Regression (max_iter=200)",
-            "Improved dataset + smarter urgency logic"
-        ]
-    })
+# =====================
+# INFO
+# =====================
+with st.expander("Model Info"):
+    st.write("""
+    ✔ Uses NLP (TF-IDF with bi-grams)  
+    ✔ Logistic Regression (optimized)  
+    ✔ Improved dataset → better accuracy  
+    ✔ Smart urgency detection  
+    """)
